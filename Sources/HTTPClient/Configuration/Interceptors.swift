@@ -18,7 +18,27 @@ public struct RequestInterceptor: Sendable {
 }
 
 extension RequestInterceptor: DependencyKey {
-    public static let liveValue: [RequestInterceptor] = []
+    public static let liveValue: [RequestInterceptor] = [
+        RequestInterceptor { request, body in
+            let request = request
+
+            var bodyLog: String?
+
+            if let prettyBody = body?.prettyJSONString {
+                bodyLog = """
+                body:
+                \(prettyBody)
+                """
+            }
+
+            Logger.httpRequests.log(
+                """
+                   \(request.method) \(request.url?.absoluteString ?? "")
+                   \(bodyLog ?? "")
+                """
+            )
+        }
+    ]
 }
 
 extension DependencyValues {
@@ -37,7 +57,27 @@ public struct ResponseInterceptor: Sendable {
 }
 
 extension ResponseInterceptor: DependencyKey {
-    public static let liveValue: [ResponseInterceptor] = []
+    public static let liveValue: [ResponseInterceptor] = [
+        ResponseInterceptor { request, response, responseData in
+            let response = response
+            let responseData = responseData
+
+            Logger.httpResponses.log(
+            """
+            response: \(response.status)
+            for: \(request.method) \(request.url?.absoluteString ?? "")
+            body: \(responseData.prettyJSONString)
+            """
+            )
+        }
+    ]
+}
+
+import OSLog
+extension Logger {
+    /// Logs  information
+    static let httpRequests = Logger(subsystem: "Networking", category: "HTTPRequests")
+    static let httpResponses = Logger(subsystem: "Networking", category: "HTTPResponses")
 }
 
 extension DependencyValues {
