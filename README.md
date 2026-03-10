@@ -22,7 +22,7 @@ Add HTTPClient to your Swift package dependencies:
 
 ```swift
 dependencies: [
-    .package(url: "your-repo-url", from: "1.0.0")
+    .package(url: "https://github.com/woodymelling/swift-dependencies-http-client", from: "1.0.0")
 ]
 ```
 
