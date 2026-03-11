@@ -6,10 +6,20 @@
 //
 
 import Foundation
+
+#if canImport(OSLog)
 import OSLog
+#elseif canImport(AndroidLogging)
+import AndroidLogging
+#endif
+
 import Dependencies
 import DependenciesMacros
 import HTTPTypes
+
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// A lightweight HTTPClient, which provides standard HTTP requests, and deep configuration tools.
 /// This is designed around the swift-dependencies library, and we use .dependency to configure the client.

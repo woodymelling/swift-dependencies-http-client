@@ -73,7 +73,7 @@ extension ResponseInterceptor: DependencyKey {
     ]
 }
 
-import OSLog
+import AndroidLogging
 extension Logger {
     /// Logs  information
     static let httpRequests = Logger(subsystem: "Networking", category: "HTTPRequests")
