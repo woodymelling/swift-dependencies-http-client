@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "swift-dependencies-http-client",
     defaultLocalization: "en",
-    platforms: [.iOS(.v16), .macOS(.v14)],
+    platforms: [.iOS(.v17), .macOS(.v14)],
     products: [
         .library(name: "HTTPClient", targets: ["HTTPClient"])
     ],
