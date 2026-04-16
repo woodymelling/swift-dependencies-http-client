@@ -11,6 +11,57 @@ import Dependencies
 import HTTPTypes
 import Foundation
 
+struct FormURLEncoderTests {
+    let encoder = FormURLEncoder()
+
+    @Test func encodesSimpleStruct() throws {
+        struct Params: Encodable {
+            let name: String
+            let count: Int
+        }
+        let data = try encoder.encode(Params(name: "alice", count: 3))
+        #expect(String(data: data, encoding: .utf8) == "name=alice&count=3")
+    }
+
+    @Test func percentEncodesSpecialCharacters() throws {
+        struct Params: Encodable { let value: String }
+        let data = try encoder.encode(Params(value: "hello world&foo=bar"))
+        #expect(String(data: data, encoding: .utf8) == "value=hello%20world%26foo%3Dbar")
+    }
+
+    @Test func encodesURLAsAbsoluteString() throws {
+        struct Params: Encodable { let url: URL }
+        let data = try encoder.encode(Params(url: URL(string: "https://example.com/callback")!))
+        #expect(String(data: data, encoding: .utf8) == "url=https%3A%2F%2Fexample.com%2Fcallback")
+    }
+
+    @Test func respectsCodingKeys() throws {
+        struct Params: Encodable {
+            let grantType: String
+            enum CodingKeys: String, CodingKey {
+                case grantType = "grant_type"
+            }
+        }
+        let data = try encoder.encode(Params(grantType: "authorization_code"))
+        #expect(String(data: data, encoding: .utf8) == "grant_type=authorization_code")
+    }
+
+    @Test func encodesDefaultValues() throws {
+        struct Params: Encodable {
+            let code: String
+            let grantType: String = "authorization_code"
+            enum CodingKeys: String, CodingKey {
+                case code
+                case grantType = "grant_type"
+            }
+        }
+        let data = try encoder.encode(Params(code: "abc123"))
+        let result = String(data: data, encoding: .utf8)!
+        #expect(result.contains("code=abc123"))
+        #expect(result.contains("grant_type=authorization_code"))
+    }
+}
+
 struct HTTPClientTests {
 
     @Test
