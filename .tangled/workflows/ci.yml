@@ -1,0 +1,13 @@
+when:
+  - event: ["push", "pull_request"]
+  - event: ["manual"]
+
+engine: "nixery"
+
+dependencies:
+  nixpkgs:
+    - swift
+
+steps:
+  - name: Test Swift Package on Linux
+    command: swift test
