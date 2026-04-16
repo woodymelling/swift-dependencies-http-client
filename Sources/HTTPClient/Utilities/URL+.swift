@@ -97,6 +97,7 @@ extension QueryEncoding {
 
 extension QueryEncoding: DependencyKey {
     public static let liveValue: QueryEncoding? = nil
+    public static let testValue: QueryEncoding? = nil
 }
 
 extension DependencyValues {

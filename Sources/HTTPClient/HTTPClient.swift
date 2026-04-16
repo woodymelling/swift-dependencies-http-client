@@ -70,7 +70,7 @@ extension HTTPClient: DependencyKey {
                         }
                     )
                 } else {
-                    throw HTTPError.httpError(httpResponse.status)
+                    throw HTTPError.httpError(httpResponse.status, data, httpResponse.headerFields)
                 }
             }
 

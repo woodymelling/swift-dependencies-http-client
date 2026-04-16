@@ -71,9 +71,20 @@ extension ResponseInterceptor: DependencyKey {
             )
         }
     ]
+    public static let testValue = Self.liveValue
 }
 
+#if canImport(OSLog)
+import OSLog
+#elseif canImport(AndroidLogging)
 import AndroidLogging
+#else
+struct Logger: Sendable {
+    init(subsystem: String, category: String) {}
+    func log(_ message: String) {}
+}
+#endif
+
 extension Logger {
     /// Logs  information
     static let httpRequests = Logger(subsystem: "Networking", category: "HTTPRequests")

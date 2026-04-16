@@ -6,9 +6,15 @@ import PackageDescription
 let package = Package(
     name: "swift-dependencies-http-client",
     defaultLocalization: "en",
-    platforms: [.iOS(.v16), .macOS(.v14)],
+    platforms: [.iOS(.v17), .macOS(.v14)],
     products: [
         .library(name: "HTTPClient", targets: ["HTTPClient"])
+    ],
+    traits: [
+      Trait(
+        name: "AndroidLogging",
+        description: "Support for Android Logging"
+      )
     ],
     dependencies: [
         .package(url: "https://github.com/pointfreeco/xctest-dynamic-overlay", from: "1.2.2"),
@@ -17,10 +23,9 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.3.6"),
 
         .package(url: "https://github.com/apple/swift-http-types", from: "1.4.0"),
-        .package(url: "https://github.com/skiptools/swift-android-native", from: "1.0.0")
+
     ],
     targets: [
-
         .target(
             name: "HTTPClient",
             dependencies: [
@@ -33,10 +38,19 @@ let package = Package(
                 .product(name: "HTTPTypes", package: "swift-http-types"),
                 .product(name: "HTTPTypesFoundation", package: "swift-http-types"),
 
-                .product(name: "AndroidLogging", package: "swift-android-native")
             ]
         ),
 
         .testTarget(name: "HTTPClientTests", dependencies: ["HTTPClient"])
     ]
 )
+
+if Context.environment["SKIP_BRIDGE"] ?? "0" != "0" {
+    package.dependencies.append(
+        .package(url: "https://source.skip.tools/swift-android-native", from: "1.0.0")
+    )
+
+    package.targets.first(where: { $0.name == "HTTPClient" })?.dependencies.append(
+        .product(name: "AndroidLogging", package: "swift-android-native")
+    )
+}

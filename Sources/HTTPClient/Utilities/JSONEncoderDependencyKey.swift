@@ -18,10 +18,12 @@ import Dependencies
 
 internal enum JSONEncoderDependencyKey: DependencyKey {
     static let liveValue = JSONEncoder()
+    static let testValue = JSONEncoder()
 }
 
 internal enum JSONDecoderDependencyKey: DependencyKey {
     static let liveValue = JSONDecoder()
+    static let testValue = JSONDecoder()
 }
 
 public extension DependencyValues {
