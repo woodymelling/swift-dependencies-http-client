@@ -11,6 +11,7 @@ import HTTPTypes
 
 struct RequestHeadersDependencyKey: DependencyKey {
     static let liveValue: HTTPFields = [:]
+    static let testValue: HTTPFields = [:]
 }
 
 extension DependencyValues {

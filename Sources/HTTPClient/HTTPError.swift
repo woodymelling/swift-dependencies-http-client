@@ -10,7 +10,7 @@ import HTTPTypes
 
 public enum HTTPError: Error {
     case improperURL(URLComponents)
-    case httpError(HTTPResponse.Status, Data?)
+    case httpError(HTTPResponse.Status, Data?, HTTPFields)
     case invalidResponse(String)
     case expectedDataResponse
     case unknown(String)
@@ -18,6 +18,6 @@ public enum HTTPError: Error {
     case decodingError(Error)
 
     static func httpError(_ response: HTTPResponse.Status) -> Self {
-        .httpError(response, nil)
+        .httpError(response, nil, HTTPFields())
     }
 }

@@ -105,6 +105,7 @@ public struct ErrorInterceptor: Sendable {
 
 extension ErrorInterceptor: DependencyKey {
     public static let liveValue: ErrorInterceptor? = nil
+    public static let testValue: ErrorInterceptor? = nil
 }
 
 extension DependencyValues {

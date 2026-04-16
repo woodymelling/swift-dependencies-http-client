@@ -92,9 +92,10 @@ extension HTTPClient: DependencyKey {
 
 import HTTPTypesFoundation
 
-/// RunHTTPRequest is an internal tool to allow for overridding the entire process of taking a HTTPRequest and turning it to a network response.
-/// This lets us easily override the whole thing in tests, skipping URLSession entirely.
-internal typealias RunHTTPRequest = @Sendable (_ request: HTTPRequest, _ data: Data?) async throws -> (Data, HTTPResponse)
+/// RunHTTPRequest is the low-level hook that maps a fully-intercepted HTTPRequest to a raw network response.
+/// Override `DependencyValues.dataForURL` in tests to inspect the request (including headers set by
+/// request interceptors) or to return canned responses without hitting the network.
+public typealias RunHTTPRequest = @Sendable (_ request: HTTPRequest, _ data: Data?) async throws -> (Data, HTTPResponse)
 internal enum RunHTTPRequestDependencyKey: DependencyKey {
 
     static let liveValue: RunHTTPRequest = { request, data in
@@ -107,7 +108,7 @@ internal enum RunHTTPRequestDependencyKey: DependencyKey {
 }
 
 extension DependencyValues {
-    internal var dataForURL: RunHTTPRequest {
+    public var dataForURL: RunHTTPRequest {
         get { self[RunHTTPRequestDependencyKey.self] }
         set { self[RunHTTPRequestDependencyKey.self] = newValue }
     }
@@ -155,6 +156,19 @@ extension HTTPClient {
 
         @Dependency(\.jsonDecoder) var jsonDecoder
         return try jsonDecoder.decode(Output.self, from: data)
+    }
+
+    public func post<Output: Decodable>(
+        _ url: URL,
+        body: Data,
+        decodingTo: Output.Type = Output.self
+    ) async throws -> Output {
+        @Dependency(\.jsonDecoder) var jsonDecoder
+
+        let request = try buildHTTPRequest(url: url, method: .post, queryItems: [])
+        let responseData = try await self.run(request, body)
+
+        return try jsonDecoder.decode(Output.self, from: responseData ?? Data())
     }
 
     public func post<Input: Encodable, Output: Decodable>(
