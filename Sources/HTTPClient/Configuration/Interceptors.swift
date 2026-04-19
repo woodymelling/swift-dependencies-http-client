@@ -30,9 +30,7 @@ extension RequestInterceptor: DependencyKey {
             }
 
             if let prettyBody = body?.prettyJSONString {
-                body:
-                \(prettyBody)
-                """
+                parts.append("body:\n\(prettyBody)")
             }
 
             Logger.httpRequests.log("\(parts.joined(separator: "\n"))")
@@ -205,12 +203,12 @@ public struct ErrorInterceptor: Sendable {
 }
 
 extension ErrorInterceptor: DependencyKey {
-    public static let liveValue: ErrorInterceptor? = nil
-    public static let testValue: ErrorInterceptor? = nil
+    public static let liveValue: [ErrorInterceptor] = []
+    public static let testValue: [ErrorInterceptor] = []
 }
 
 extension DependencyValues {
-    public var errorInterceptor: ErrorInterceptor? {
+    public var errorInterceptors: [ErrorInterceptor] {
         get { self[ErrorInterceptor.self] }
         set { self[ErrorInterceptor.self] = newValue }
     }

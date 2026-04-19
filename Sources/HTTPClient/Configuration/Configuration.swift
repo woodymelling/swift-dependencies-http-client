@@ -14,7 +14,7 @@ public struct HTTPClientConfiguration: Sendable {
     public var requestHeaders: HTTPFields
     public var requestInterceptors: [RequestInterceptor]
     public var responseInterceptors: [ResponseInterceptor]
-    public var errorInterceptor: ErrorInterceptor?
+    public var errorInterceptors: [ErrorInterceptor]
     public var jsonDecoder: JSONDecoder
     public var jsonEncoder: JSONEncoder
 
@@ -23,7 +23,7 @@ public struct HTTPClientConfiguration: Sendable {
         requestHeaders: HTTPFields,
         requestInterceptors: [RequestInterceptor],
         responseInterceptors: [ResponseInterceptor],
-        errorInterceptor: ErrorInterceptor?,
+        errorInterceptors: [ErrorInterceptor],
         jsonDecoder: JSONDecoder,
         jsonEncoder: JSONEncoder
     ) {
@@ -31,7 +31,7 @@ public struct HTTPClientConfiguration: Sendable {
         self.requestHeaders = requestHeaders
         self.requestInterceptors = requestInterceptors
         self.responseInterceptors = responseInterceptors
-        self.errorInterceptor = errorInterceptor
+        self.errorInterceptors = errorInterceptors
         self.jsonDecoder = jsonDecoder
         self.jsonEncoder = jsonEncoder
     }
@@ -41,7 +41,7 @@ public struct HTTPClientConfiguration: Sendable {
         requestHeaders: HTTPFields,
         requestInterceptors: [RequestInterceptor],
         responseInterceptors: [ResponseInterceptor],
-        errorInterceptor: ErrorInterceptor?,
+        errorInterceptors: [ErrorInterceptor],
         jsonDecoder: JSONDecoder,
         jsonEncoder: JSONEncoder
     ) {
@@ -49,7 +49,7 @@ public struct HTTPClientConfiguration: Sendable {
         self.requestHeaders = requestHeaders
         self.requestInterceptors = requestInterceptors
         self.responseInterceptors = responseInterceptors
-        self.errorInterceptor = errorInterceptor
+        self.errorInterceptors = errorInterceptors
         self.jsonDecoder = jsonDecoder
         self.jsonEncoder = jsonEncoder
     }
@@ -63,7 +63,7 @@ extension DependencyValues {
                 requestHeaders: self.requestHeaders,
                 requestInterceptors: self.requestInterceptors,
                 responseInterceptors: self.responseInterceptors,
-                errorInterceptor: self.errorInterceptor,
+                errorInterceptors: self.errorInterceptors,
                 jsonDecoder: self.jsonDecoder,
                 jsonEncoder: self.jsonEncoder
             )
@@ -73,7 +73,7 @@ extension DependencyValues {
             self.requestHeaders = newValue.requestHeaders
             self.requestInterceptors = newValue.requestInterceptors
             self.responseInterceptors = newValue.responseInterceptors
-            self.errorInterceptor = newValue.errorInterceptor
+            self.errorInterceptors = newValue.errorInterceptors
             self.jsonDecoder = newValue.jsonDecoder
             self.jsonEncoder = newValue.jsonEncoder
         }

@@ -149,7 +149,7 @@ struct HTTPClientTests {
                 ResponseInterceptor { _, _, _ in
                 }
             ]
-            $0.errorInterceptor = nil
+            $0.errorInterceptors = []
 
             $0.dataForURL = { _, _ in
                 (
@@ -198,7 +198,7 @@ struct HTTPClientTests {
 
                 $0.requestInterceptors = []
                 $0.responseInterceptors = []
-                $0.errorInterceptor = nil
+                $0.errorInterceptors = []
 
                 $0.dataForURL = { _, _ in
                     return (Data(), HTTPResponse(status: .unauthorized))
@@ -394,7 +394,7 @@ struct InterceptorTests {
             $0.requestHeaders = [:]
             $0.requestInterceptors = [RequestInterceptor { _, _ in interceptorRan = true }]
             $0.responseInterceptors = []
-            $0.errorInterceptor = nil
+            $0.errorInterceptors = []
             $0.dataForURL = { _, _ in (Data(), HTTPResponse(status: 200)) }
         } operation: {
             let request = try HTTPClient.liveValue.buildHTTPRequest(
@@ -415,7 +415,7 @@ struct InterceptorTests {
             $0.requestHeaders = [:]
             $0.requestInterceptors = []
             $0.responseInterceptors = [ResponseInterceptor { _, _, data in capturedData = data }]
-            $0.errorInterceptor = nil
+            $0.errorInterceptors = []
             $0.dataForURL = { _, _ in (expectedData, HTTPResponse(status: 200)) }
         } operation: {
             let request = try HTTPClient.liveValue.buildHTTPRequest(
@@ -435,9 +435,9 @@ struct InterceptorTests {
             $0.requestHeaders = [:]
             $0.requestInterceptors = []
             $0.responseInterceptors = []
-            $0.errorInterceptor = ErrorInterceptor(maxRetries: 1) { request, _, _, retry in
+            $0.errorInterceptors = [ErrorInterceptor { request, _, _, _, retry in
                 try await retry(request)
-            }
+            }]
             $0.dataForURL = { _, _ in
                 let count = attemptCount
                 attemptCount += 1
@@ -461,9 +461,9 @@ struct InterceptorTests {
             $0.requestHeaders = [:]
             $0.requestInterceptors = []
             $0.responseInterceptors = []
-            $0.errorInterceptor = ErrorInterceptor(maxRetries: 1) { request, _, _, retry in
+            $0.errorInterceptors = [ErrorInterceptor { request, _, _, _, retry in
                 try await retry(request)  // retry once; second failure propagates as HTTPError
-            }
+            }]
             $0.dataForURL = { _, _ in (Data(), HTTPResponse(status: .unauthorized)) }
         } operation: {
             let request = try HTTPClient.liveValue.buildHTTPRequest(
@@ -477,5 +477,71 @@ struct InterceptorTests {
                 #expect(status == .unauthorized)
             }
         }
+    }
+
+    @Test func errorInterceptorReceivesResponseHeaders() async throws {
+        nonisolated(unsafe) var capturedNonce: String? = nil
+
+        try await withDependencies {
+            $0.hostURL = "api.example.com"
+            $0.requestHeaders = [:]
+            $0.requestInterceptors = []
+            $0.responseInterceptors = []
+            $0.errorInterceptors = [ErrorInterceptor { request, _, headers, _, retry in
+                capturedNonce = headers[HTTPField.Name("DPoP-Nonce")!]
+                return try await retry(request)
+            }]
+            $0.dataForURL = { _, _ in
+                var response = HTTPResponse(status: .unauthorized)
+                response.headerFields[HTTPField.Name("DPoP-Nonce")!] = "test-nonce"
+                return (Data(), response)
+            }
+        } operation: {
+            let request = try HTTPClient.liveValue.buildHTTPRequest(
+                url: URL(path: "/test"), method: .get, queryItems: []
+            )
+            _ = try? await HTTPClient.liveValue.run(request, nil)
+        }
+
+        #expect(capturedNonce == "test-nonce")
+    }
+
+    @Test func secondErrorInterceptorHandlesWhenFirstPassesNil() async throws {
+        nonisolated(unsafe) var firstRan = false
+        nonisolated(unsafe) var secondRan = false
+        nonisolated(unsafe) var attemptCount = 0
+
+        try await withDependencies {
+            $0.hostURL = "api.example.com"
+            $0.requestHeaders = [:]
+            $0.requestInterceptors = []
+            $0.responseInterceptors = []
+            $0.errorInterceptors = [
+                ErrorInterceptor { _, _, _, _, _ in
+                    firstRan = true
+                    return nil  // pass to next
+                },
+                ErrorInterceptor { request, _, _, _, retry in
+                    secondRan = true
+                    return try await retry(request)
+                }
+            ]
+            $0.dataForURL = { _, _ in
+                let count = attemptCount
+                attemptCount += 1
+                return count == 0
+                    ? (Data(), HTTPResponse(status: .unauthorized))
+                    : (Data(), HTTPResponse(status: 200))
+            }
+        } operation: {
+            let request = try HTTPClient.liveValue.buildHTTPRequest(
+                url: URL(path: "/test"), method: .get, queryItems: []
+            )
+            _ = try await HTTPClient.liveValue.run(request, nil)
+        }
+
+        #expect(firstRan)
+        #expect(secondRan)
+        #expect(attemptCount == 2)
     }
 }

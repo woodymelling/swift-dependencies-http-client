@@ -39,7 +39,7 @@ extension HTTPClient: DependencyKey {
     public static let liveValue: HTTPClient = HTTPClient { request, body in
         @Dependency(\.requestInterceptors) var requestInterceptors
         @Dependency(\.responseInterceptors) var responseInterceptors
-        @Dependency(\.errorInterceptor) var errorInterceptor
+        @Dependency(\.errorInterceptors) var errorInterceptors
 
         @Sendable func _run(_ request: HTTPRequest, remainingRetries: Int) async throws -> Data? {
             var request = request
@@ -59,25 +59,27 @@ extension HTTPClient: DependencyKey {
             }
 
             if httpResponse.status.kind != .successful {
-                @Dependency(\.errorInterceptor) var errorInterceptor
-                if let errorInterceptor, remainingRetries > 0 {
-                    return try await errorInterceptor.interceptor(
-                        request,
-                        httpResponse.status,
-                        data,
-                        { request in
-                            try await _run(request, remainingRetries: remainingRetries - 1)
+                @Dependency(\.errorInterceptors) var errorInterceptors
+                if remainingRetries > 0 {
+                    for interceptor in errorInterceptors {
+                        if let result = try await interceptor.interceptor(
+                            request,
+                            httpResponse.status,
+                            httpResponse.headerFields,
+                            data,
+                            { request in try await _run(request, remainingRetries: remainingRetries - 1) }
+                        ) {
+                            return result
                         }
-                    )
-                } else {
-                    throw HTTPError.httpError(httpResponse.status, data, httpResponse.headerFields)
+                    }
                 }
+                throw HTTPError.httpError(httpResponse.status, data, httpResponse.headerFields)
             }
 
             return data
         }
 
-        let data = try await _run(request, remainingRetries: errorInterceptor?.maxRetries ?? 0)
+        let data = try await _run(request, remainingRetries: errorInterceptors.count)
 
         // If we get a non-response back from the network, URLSession returns a non-nil, but empty Data() value.
         // This line handles that, and returns nil, which is a better representation of the response data
